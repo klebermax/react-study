@@ -37,10 +37,7 @@ export const deleteContact = id => async dispatch => {
 };
 
 export const addContact = contact => async dispatch => {
-  const res = await axios.post(
-    'https://jsonplaceholder.typicode.com/users',
-    contact
-  );
+  await axios.post('https://jsonplaceholder.typicode.com/users', contact);
 
   dispatch({
     type: ADD_CONTACT,
@@ -49,7 +46,7 @@ export const addContact = contact => async dispatch => {
 };
 
 export const updContact = contact => async dispatch => {
-  const res = await axios.put(
+  await axios.put(
     `https://jsonplaceholder.typicode.com/users/${contact.id}`,
     contact
   );
