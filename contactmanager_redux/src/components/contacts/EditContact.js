@@ -47,8 +47,10 @@ class EditContact extends Component {
       return;
     }
 
+    const { id } = this.props.match.params.id;
+
     const updatedContact = {
-      id: this.props.match.params.id,
+      id,
       name,
       email,
       phone
