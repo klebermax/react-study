@@ -12,7 +12,7 @@ class AppNavbar extends Component {
           <button
             className="navbar-toggler"
             type="button"
-            data-toogle="collapse"
+            data-toggle="collapse"
             data-target="#navbarMain"
           >
             <span className="navbar-toggler-icon" />
