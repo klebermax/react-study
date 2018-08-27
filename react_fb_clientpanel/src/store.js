@@ -3,13 +3,10 @@ import firebase from 'firebase';
 import 'firebase/firestore';
 import { reactReduxFirebase, firebaseReducer } from 'react-redux-firebase';
 import { reduxFirestore, firestoreReducer } from 'redux-firestore';
+import firebaseConfig from './firebaseApiSettings';
 
 // Reducers
 // @todo
-
-const firebaseConfig = {
-  // insert firebase config here
-};
 
 // react-redux-firebase config
 const rrfConfig = {
@@ -20,7 +17,9 @@ const rrfConfig = {
 // Init firebase instance
 firebase.initializeApp(firebaseConfig);
 // Init firestore
-//const firestore = firebase.firestore();
+const firestore = firebase.firestore();
+const settings = { timestampsInSnapshots: true };
+firestore.settings(settings);
 
 const createStoreWithFirebase = compose(
   reactReduxFirebase(firebase, rrfConfig), // firebase instance as first argument
