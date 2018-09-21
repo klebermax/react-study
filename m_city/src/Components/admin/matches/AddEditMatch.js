@@ -219,7 +219,7 @@ class AddEditMatch extends Component {
     };
 
     if (!matchId) {
-      // add match
+      getTeams(false, 'Add Match');
     } else {
       firebaseDb
         .ref(`matches/${matchId}`)
@@ -232,6 +232,60 @@ class AddEditMatch extends Component {
     }
   }
 
+  successForm(message) {
+    this.setState({ formSuccess: message });
+
+    setTimeout(() => {
+      this.setState({ formSuccess: '' });
+    }, 2000);
+  }
+
+  submitForm(event) {
+    event.preventDefault();
+
+    let dataToSubmit = {};
+    let formIsValid = true;
+
+    for (let key in this.state.formdata) {
+      dataToSubmit[key] = this.state.formdata[key].value;
+      formIsValid = this.state.formdata[key].valid && formIsValid;
+    }
+
+    this.state.teams.forEach(team => {
+      if (team.shortName === dataToSubmit.local) {
+        dataToSubmit['localThmb'] = team.thmb;
+      }
+      if (team.shortName === dataToSubmit.away) {
+        dataToSubmit['awayThmb'] = team.thmb;
+      }
+    });
+
+    if (formIsValid) {
+      if (this.state.formType === 'Edit Match') {
+        firebaseDb
+          .ref(`matches/${this.state.matchId}`)
+          .update(dataToSubmit)
+          .then(() => {
+            this.successForm('Updated correctly');
+          })
+          .catch(e => {
+            this.setState({ formError: true });
+          });
+      } else {
+        firebaseMatches
+          .push(dataToSubmit)
+          .then(() => {
+            this.props.history.push('/admin_matches');
+          })
+          .catch(e => {
+            this.setState({ formError: true });
+          });
+      }
+    } else {
+      this.setState({ formError: true });
+    }
+  }
+
   render() {
     return (
       <AdminLayout>
@@ -240,7 +294,11 @@ class AddEditMatch extends Component {
 
           <div>
             <form onSubmit={event => this.submitForm(event)}>
-              <FormField id={'date'} formdata={this.state.formdata.date} change={element => this.updateForm(element)} />
+              <FormField
+                id={'date'}
+                formdata={this.state.formdata.date}
+                change={element => this.updateForm(element)}
+              />
 
               <div className="select_team_layout">
                 <div className="label_inputs">Local</div>
@@ -310,7 +368,7 @@ class AddEditMatch extends Component {
                 />
               </div>
 
-              <div className="success_labe">{this.state.formSuccess}</div>
+              <div className="success_label">{this.state.formSuccess}</div>
               {this.state.formError ? <div className="error_label">Something is wrong</div> : null}
 
               <div className="admin_submit">
