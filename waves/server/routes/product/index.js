@@ -76,4 +76,22 @@ router.get('/articles_by_id', (request, response) => {
     });
 });
 
+// /articles?sortBy=sold&order=desc&limit=4
+router.get('/articles', (request, response) => {
+  let order = request.query.order ? request.query.order : 'asc';
+  let sortBy = request.query.sortBy ? request.query.sortBy : '_id';
+  let limit = request.query.limit ? parseInt(request.query.limit) : 100;
+
+  Product.find()
+    .populate('brand')
+    .populate('wood')
+    .sort([[sortBy, order]])
+    .limit(limit)
+    .exec((err, articles) => {
+      if (err) return response.status(400).send(err);
+
+      response.send(articles);
+    });
+});
+
 module.exports = router;
