@@ -1,6 +1,10 @@
 var express = require('express');
 var router = express.Router();
 
+const formidable = require('express-formidable');
+const cloudinary = require('cloudinary');
+
+const { admin } = require('../../middleware/admin');
 const { auth } = require('../../middleware/auth');
 
 const { User } = require('../../models/user');
@@ -62,6 +66,32 @@ router.post('/logout', auth, (request, response) => {
       return response.status(200).send({ success: true });
     }
   );
+});
+
+router.post('/uploadimage', auth, admin, formidable(), (request, response) => {
+  cloudinary.uploader.upload(
+    request.files.file.path,
+    result => {
+      response.status(200).send({
+        public_id: result.public_id,
+        url: result.url
+      });
+    },
+    {
+      public_id: `${Date.now()}`,
+      resource_type: 'auto'
+    }
+  );
+});
+
+router.delete('/removeimage', auth, admin, (request, response) => {
+  let image_id = request.query.public_id;
+
+  cloudinary.uploader.destroy(image_id, (result, error) => {
+    if (error) return response.status(400).json({ success: false, error });
+
+    response.status(200).send(result);
+  });
 });
 
 module.exports = router;

@@ -9,12 +9,14 @@ import Register from './components/Register_Login/register';
 import Shop from './components/Shop';
 
 import UserDashboard from './components/Dashboard';
+import AddProduct from './components/Dashboard/Admin/add_product';
 
 const Routes = () => {
   return (
     <Layout>
       <Switch>
         <Route path="/user/dashboard" exact component={Auth(UserDashboard, true)} />
+        <Route path="/admin/add_product" exact component={Auth(AddProduct, true)} />
         <Route path="/register" exact component={Auth(Register, false)} />
         <Route path="/register_login" exact component={Auth(RegisterLogin, false)} />
         <Route path="/shop" exact component={Auth(Shop, null)} />
