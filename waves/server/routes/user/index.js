@@ -7,6 +7,8 @@ const cloudinary = require('cloudinary');
 const { admin } = require('../../middleware/admin');
 const { auth } = require('../../middleware/auth');
 
+const mongoose = require('mongoose');
+
 const { User } = require('../../models/user');
 
 router.get('/auth', auth, (request, response) => {
@@ -91,6 +93,55 @@ router.delete('/removeimage', auth, admin, (request, response) => {
     if (error) return response.status(400).json({ success: false, error });
 
     response.status(200).send(result);
+  });
+});
+
+router.post('/addToCart', auth, (request, response) => {
+  User.findOne({ _id: request.user._id }, (err, doc) => {
+    let duplicate = false;
+
+    doc.cart.forEach(item => {
+      if (item.id == request.query.productId) {
+        duplicate = true;
+      }
+    });
+
+    if (duplicate) {
+      User.findOneAndUpdate(
+        {
+          _id: request.user._id,
+          'cart.id': mongoose.Types.ObjectId(request.query.productId)
+        },
+        {
+          $inc: { 'cart.$.quantity': 1 }
+        },
+        { new: true },
+        () => {
+          if (err) return response.status(400).json({ success: false, err });
+
+          response.status(200).json(doc.cart);
+        }
+      );
+    } else {
+      User.findOneAndUpdate(
+        { _id: request.user._id },
+        {
+          $push: {
+            cart: {
+              id: mongoose.Types.ObjectId(request.query.productId),
+              quantity: 1,
+              date: Date.now()
+            }
+          }
+        },
+        { new: true },
+        (err, doc) => {
+          if (err) return response.status(400).json({ success: false, err });
+
+          response.status(200).json(doc.cart);
+        }
+      );
+    }
   });
 });
 

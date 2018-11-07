@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { LOGIN_USER, REGISTER_USER, AUTH_USER, LOGOUT_USER } from './types';
-import { USER_SERVER } from '../components/utils/misc';
+import { LOGIN_USER, REGISTER_USER, AUTH_USER, LOGOUT_USER, ADD_TO_CART_USER, GET_CART_ITEMS_USER } from './types';
+import { USER_SERVER, PRODUCT_SERVER } from '../components/utils/misc';
 
 export function registerUser(dataToSubmit) {
   const request = axios.post(`${USER_SERVER}/register`, dataToSubmit).then(response => response.data);
@@ -31,3 +31,31 @@ export function logoutUser() {
 
   return { type: LOGOUT_USER, payload: request };
 }
+
+export function addToCart(_id) {
+  const request = axios.post(`${USER_SERVER}/addToCart?productId=${_id}`, null).then(response => response.data);
+
+  return {
+    type: ADD_TO_CART_USER,
+    payload: request
+  };
+}
+
+export const getCartItems = (cartItems, userCart) => async dispatch => {
+  const request = await axios.get(`${PRODUCT_SERVER}/articles_by_id?id=${cartItems}&type=array`).then(response => {
+    userCart.forEach(cartItem => {
+      response.data.forEach((shopItem, index) => {
+        if (cartItem.id === shopItem._id) {
+          response.data[index].quantity = cartItem.quantity;
+        }
+      });
+    });
+
+    return response.data;
+  });
+
+  dispatch({
+    type: GET_CART_ITEMS_USER,
+    payload: request
+  });
+};

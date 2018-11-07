@@ -5,10 +5,33 @@ import {
   GET_BRANDS,
   GET_WOODS,
   GET_PRODUCTS_TO_SHOP,
+  GET_PRODUCT_DETAIL,
   ADD_PRODUCT,
-  CLEAR_PRODUCT
+  ADD_BRAND,
+  ADD_WOOD,
+  CLEAR_PRODUCT,
+  CLEAR_PRODUCT_DETAIL
 } from './types';
+
 import { PRODUCT_SERVER } from '../components/utils/misc';
+
+export const getProductDetail = id => async dispatch => {
+  const request = await axios
+    .get(`${PRODUCT_SERVER}/articles_by_id?id=${id}&type=single`)
+    .then(response => response.data);
+
+  dispatch({
+    type: GET_PRODUCT_DETAIL,
+    payload: request
+  });
+};
+
+export function clearProductDetail() {
+  return {
+    type: CLEAR_PRODUCT_DETAIL,
+    payload: ''
+  };
+}
 
 export function getProductsBySell() {
   //articles?sortBy=sold&order=desc&limit=4
@@ -44,6 +67,19 @@ export const getBrands = () => async dispatch => {
   });
 };
 
+export function addBrand(dataToSubmit, existingBrands) {
+  const request = axios.post(`${PRODUCT_SERVER}/brand`, dataToSubmit).then(response => {
+    let brands = [...existingBrands, response.data.brand];
+
+    return { success: response.data.success, brands };
+  });
+
+  return {
+    type: ADD_BRAND,
+    payload: request
+  };
+}
+
 export const getWoods = () => async dispatch => {
   const request = await axios.get(`${PRODUCT_SERVER}/woods`).then(response => response.data);
 
@@ -52,6 +88,19 @@ export const getWoods = () => async dispatch => {
     payload: request
   });
 };
+
+export function addWood(dataToSubmit, existingWoods) {
+  const request = axios.post(`${PRODUCT_SERVER}/wood`, dataToSubmit).then(response => {
+    let woods = [...existingWoods, response.data.wood];
+
+    return { success: response.data.success, woods };
+  });
+
+  return {
+    type: ADD_WOOD,
+    payload: request
+  };
+}
 
 export const getProductsToShop = (skip, limit, filters = [], previousState = []) => async dispatch => {
   await axios
