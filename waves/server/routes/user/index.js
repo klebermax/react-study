@@ -10,6 +10,10 @@ const { auth } = require('../../middleware/auth');
 const mongoose = require('mongoose');
 
 const { User } = require('../../models/user');
+const { Product } = require('../../models/product');
+const { Payment } = require('../../models/payment');
+
+const async = require('async');
 
 router.get('/auth', auth, (request, response) => {
   response.status(200).json({
@@ -143,6 +147,105 @@ router.post('/addToCart', auth, (request, response) => {
       );
     }
   });
+});
+
+router.delete('/removeFromCart', auth, (request, response) => {
+  User.findOneAndUpdate(
+    { _id: request.user._id },
+    { $pull: { cart: { id: mongoose.Types.ObjectId(request.query._id) } } },
+    { new: true },
+    (error, doc) => {
+      let cart = doc.cart;
+      let products = cart.map(item => {
+        return mongoose.Types.ObjectId(item.id);
+      });
+
+      Product.find({ _id: { $in: products } })
+        .populate('brand')
+        .populate('wood')
+        .exec((err, cartDetail) => {
+          return response.status(200).json({
+            cartDetail,
+            cart
+          });
+        });
+    }
+  );
+});
+
+router.post('/successBuy', auth, (request, response) => {
+  let history = [];
+  let transactionData = {};
+
+  request.body.cartDetail.forEach(item => {
+    history.push({
+      dateOfPurchase: Date.now(),
+      name: item.name,
+      brand: item.brand.name,
+      id: item._id,
+      price: item.price,
+      quantity: item.quantity,
+      paymentId: request.body.paymentData.paymentID
+    });
+  });
+
+  transactionData.user = {
+    id: request.user._id,
+    name: request.user.name,
+    lastname: request.user.lastname,
+    email: request.user.email
+  };
+
+  transactionData.data = request.body.paymentData;
+  transactionData.product = history;
+
+  User.findOneAndUpdate(
+    { _id: request.user._id },
+    { $push: { history: history }, $set: { cart: [] } },
+    { new: true },
+    (error, user) => {
+      if (error) return response.status(400).json({ success: false, error });
+
+      const payment = new Payment(transactionData);
+      payment.save((err, doc) => {
+        if (err) return response.status(400).json({ success: false, err });
+
+        let products = [];
+        doc.product.forEach(item => {
+          products.push({ id: item.id, quantity: item.quantity });
+        });
+
+        async.eachSeries(
+          products,
+          (item, callback) => {
+            Product.update({ _id: item.id }, { $inc: { sold: item.quantity } }, { new: false }, callback);
+          },
+          err => {
+            if (err) return response.json({ success: false, err });
+
+            response.status(200).json({ success: true, cart: user.cart, cartDetail: [] });
+          }
+        );
+      });
+    }
+  );
+});
+
+router.post('/update_profile', auth, (request, response) => {
+  User.findOneAndUpdate(
+    { _id: request.user._id },
+    {
+      $set: request.body
+    },
+    {
+      new: true
+    },
+    (err, doc) => {
+      if (err) return response.json({ success: false, err });
+
+      return response.status(200).send({ success: true });
+    }
+  );
 });
 
 module.exports = router;

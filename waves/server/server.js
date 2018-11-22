@@ -24,9 +24,11 @@ cloudinary.config({
 // Routes
 const userRoutes = require('./routes/user');
 const productRoutes = require('./routes/product');
+const siteRoutes = require('./routes/site');
 
 app.use('/api/users', userRoutes);
 app.use('/api/product', productRoutes);
+app.use('/api/site', siteRoutes);
 
 const port = process.env.PORT || 3002;
 

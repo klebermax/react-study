@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import FontAwesomeIcon from '@fortawesome/react-fontawesome';
 import faShoppingBag from '@fortawesome/fontawesome-free-solid/faShoppingBag';
+import faDollarSign from '@fortawesome/fontawesome-free-solid/faDollarSign';
 
 const MyButton = props => {
   const buttons = () => {
@@ -20,6 +21,14 @@ const MyButton = props => {
         template = (
           <div className="bag_link" onClick={() => props.runAction()}>
             <FontAwesomeIcon icon={faShoppingBag} />
+          </div>
+        );
+        break;
+
+      case 'payment_test':
+        template = (
+          <div className="add_to_cart_link" onClick={() => props.runAction()}>
+            <FontAwesomeIcon icon={faDollarSign} /> Fake Payment
           </div>
         );
         break;

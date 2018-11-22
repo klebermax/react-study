@@ -13,6 +13,8 @@ import UserDashboard from './components/Dashboard';
 import AddProduct from './components/Dashboard/Admin/add_product';
 import UserCart from './components/Dashboard/cart';
 import ManageCategories from './components/Dashboard/Admin/manage_categories';
+import UpdateProfile from './components/Dashboard/update_profile';
+import ManageSite from './components/Dashboard/Admin/manage_site';
 
 const Routes = () => {
   return (
@@ -20,8 +22,11 @@ const Routes = () => {
       <Switch>
         <Route path="/user/dashboard" exact component={Auth(UserDashboard, true)} />
         <Route path="/user/cart" exact component={Auth(UserCart, true)} />
+        <Route path="/user/user_profile" exact component={Auth(UpdateProfile, true)} />
+
         <Route path="/admin/add_product" exact component={Auth(AddProduct, true)} />
         <Route path="/admin/manage_categories" exact component={Auth(ManageCategories, true)} />
+        <Route path="/admin/site_info" exact component={Auth(ManageSite, true)} />
         <Route path="/product_detail/:id" exact component={Auth(ProductDetail, null)} />
         <Route path="/register" exact component={Auth(Register, false)} />
         <Route path="/register_login" exact component={Auth(RegisterLogin, false)} />

@@ -1,5 +1,16 @@
 import axios from 'axios';
-import { LOGIN_USER, REGISTER_USER, AUTH_USER, LOGOUT_USER, ADD_TO_CART_USER, GET_CART_ITEMS_USER } from './types';
+import {
+  LOGIN_USER,
+  REGISTER_USER,
+  AUTH_USER,
+  LOGOUT_USER,
+  ADD_TO_CART_USER,
+  GET_CART_ITEMS_USER,
+  REMOVE_CART_ITEM_USER,
+  ON_SUCCESS_BUY_USER,
+  UPDATE_DATA_USER,
+  CLEAR_UPDATE_USER_DATA
+} from './types';
 import { USER_SERVER, PRODUCT_SERVER } from '../components/utils/misc';
 
 export function registerUser(dataToSubmit) {
@@ -57,5 +68,49 @@ export const getCartItems = (cartItems, userCart) => async dispatch => {
   dispatch({
     type: GET_CART_ITEMS_USER,
     payload: request
+  });
+};
+
+export const removeCartItem = id => async dispatch => {
+  const request = await axios.delete(`${USER_SERVER}/removeFromCart?_id=${id}`).then(response => {
+    response.data.cart.forEach(item => {
+      response.data.cartDetail.forEach((k, i) => {
+        if (item.id === k._id) {
+          response.data.cartDetail[i].quantity = item.quantity;
+        }
+      });
+    });
+
+    return response.data;
+  });
+
+  dispatch({
+    type: REMOVE_CART_ITEM_USER,
+    payload: request
+  });
+};
+
+export const onSuccessBuy = data => async dispatch => {
+  const request = await axios.post(`${USER_SERVER}/successBuy`, data).then(response => response.data);
+
+  dispatch({
+    type: ON_SUCCESS_BUY_USER,
+    payload: request
+  });
+};
+
+export const updateUserData = data => async dispatch => {
+  const request = await axios.post(`${USER_SERVER}/update_profile`, data).then(response => response.data);
+
+  dispatch({
+    type: UPDATE_DATA_USER,
+    payload: request
+  });
+};
+
+export const clearUpdateUser = () => async dispatch => {
+  dispatch({
+    type: CLEAR_UPDATE_USER_DATA,
+    payload: ''
   });
 };
