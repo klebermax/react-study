@@ -15,6 +15,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
+app.use(express.static('client/build')); // where to find the static files
+
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
@@ -29,6 +31,15 @@ const siteRoutes = require('./routes/site');
 app.use('/api/users', userRoutes);
 app.use('/api/product', productRoutes);
 app.use('/api/site', siteRoutes);
+
+if (process.env.NODE_ENV === 'production') {
+  // inside heroku, to match the site to render
+
+  const path = require('path');
+  app.get('/*', (request, response) => {
+    response.sendfile(path.resolve(__dirname, '../client', 'build', 'index.html'));
+  });
+}
 
 const port = process.env.PORT || 3002;
 

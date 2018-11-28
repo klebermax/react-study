@@ -4,6 +4,8 @@ var router = express.Router();
 const formidable = require('express-formidable');
 const cloudinary = require('cloudinary');
 
+const moment = require('moment');
+
 const { admin } = require('../../middleware/admin');
 const { auth } = require('../../middleware/auth');
 
@@ -13,7 +15,15 @@ const { User } = require('../../models/user');
 const { Product } = require('../../models/product');
 const { Payment } = require('../../models/payment');
 
+const { sendEmail } = require('../../utils/mail');
+
+const SHA1 = require('crypto-js/sha1');
+
 const async = require('async');
+
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 
 router.get('/auth', auth, (request, response) => {
   response.status(200).json({
@@ -34,7 +44,9 @@ router.post('/register', (request, response) => {
   user.save((err, doc) => {
     if (err) return response.json({ success: false, err });
 
-    response.status(200).json({
+    sendEmail(doc.email, doc.name, null, 'welcome');
+
+    return response.status(200).json({
       success: true
     });
   });
@@ -177,8 +189,14 @@ router.post('/successBuy', auth, (request, response) => {
   let history = [];
   let transactionData = {};
 
+  const date = new Date();
+  const poNumber = `PO-${date.getSeconds()}${date.getMilliseconds()}-${SHA1(request.user._id)
+    .toString()
+    .substring(0, 8)}`;
+
   request.body.cartDetail.forEach(item => {
     history.push({
+      purchaseOrder: poNumber,
       dateOfPurchase: Date.now(),
       name: item.name,
       brand: item.brand.name,
@@ -196,7 +214,7 @@ router.post('/successBuy', auth, (request, response) => {
     email: request.user.email
   };
 
-  transactionData.data = request.body.paymentData;
+  transactionData.data = { ...request.body.paymentData, purchaseOrder: poNumber };
   transactionData.product = history;
 
   User.findOneAndUpdate(
@@ -223,6 +241,8 @@ router.post('/successBuy', auth, (request, response) => {
           err => {
             if (err) return response.json({ success: false, err });
 
+            sendEmail(user.email, user.name, null, 'purchase', transactionData);
+
             response.status(200).json({ success: true, cart: user.cart, cartDetail: [] });
           }
         );
@@ -246,6 +266,77 @@ router.post('/update_profile', auth, (request, response) => {
       return response.status(200).send({ success: true });
     }
   );
+});
+
+let storage = multer.diskStorage({
+  destination: (request, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (request, file, cb) => {
+    cb(null, `${Date.now()}_${file.originalname}`);
+  }
+});
+
+const upload = multer({ storage: storage }).single('file');
+
+router.post('/uploadfile', auth, admin, (request, response) => {
+  upload(request, response, err => {
+    if (err) {
+      return response.status(400).json({ success: false, err });
+    }
+
+    return response.json({ success: true });
+  });
+});
+
+router.get('/admin_files', auth, admin, (request, response) => {
+  const dir = path.resolve('.') + '/uploads/';
+
+  fs.readdir(dir, (err, items) => {
+    return response.status(200).send(items);
+  });
+});
+
+router.get('/download/:filename', auth, admin, (request, response) => {
+  const file = path.resolve('.') + `/uploads/${request.params.filename}`;
+
+  response.download(file);
+});
+
+router.post('/reset_user', (request, response) => {
+  User.findOne({ email: request.body.email }, (err, user) => {
+    user.generateResetToken((err, user) => {
+      if (err) {
+        return response.status(400).json({ success: false, err });
+      }
+
+      sendEmail(user.email, user.name, null, 'reset_password', user);
+
+      return response.json({ success: true });
+    });
+  });
+});
+
+router.post('/reset_password', (request, response) => {
+  var today = moment()
+    .startOf('day')
+    .valueOf();
+
+  User.findOne({ resetToken: request.body.resetToken, resetTokenExp: { $gte: today } }, (err, user) => {
+    if (!user) return response.json({ success: false, message: 'Sorry, bad token, please generate new one' });
+
+    user.password = request.body.password;
+    user.resetToken = '';
+    user.resetTokenExp = '';
+
+    user.save((erro, doc) => {
+      if (err) {
+        return response.status(400).json({ success: false, err });
+      }
+
+      return response.status(200).json({ success: true });
+    });
+  });
 });
 
 module.exports = router;
